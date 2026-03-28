@@ -162,7 +162,7 @@ async function main() {
   const force = args.includes("--force");
   const jsonOutput = args.includes("--json");
   const doSave = args.includes("--save");
-  const quiet = args.includes("--quiet") || args.includes("-q");
+  const quiet = jsonOutput || args.includes("--quiet") || args.includes("-q");
 
   const saved = loadVersions();
   const results = [];

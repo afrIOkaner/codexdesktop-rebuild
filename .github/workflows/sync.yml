@@ -219,16 +219,17 @@ jobs:
       - name: Get upstream version and tag
         id: version
         run: |
-          VERSION=$(node scripts/check-update.js --json --force 2>/dev/null | node -e "
-            let d=''; process.stdin.on('data',c=>d+=c); process.stdin.on('end',()=>{
-              try { const j=JSON.parse(d); console.log(j.platforms?.macOS?.version || j.platforms?.Windows?.version || ''); }
-              catch { console.log(''); }
-            });
-          ")
+          RESULT=$(node scripts/check-update.js --json --force)
+          MAC_VER=$(echo "$RESULT" | node -e "let d='';process.stdin.on('data',c=>d+=c);process.stdin.on('end',()=>{try{const j=JSON.parse(d);console.log(j.platforms?.macOS?.version||'')}catch{console.log('')}})")
+          WIN_VER=$(echo "$RESULT" | node -e "let d='';process.stdin.on('data',c=>d+=c);process.stdin.on('end',()=>{try{const j=JSON.parse(d);console.log(j.platforms?.Windows?.version||'')}catch{console.log('')}})")
+
+          VERSION="${MAC_VER:-$WIN_VER}"
           echo "version=$VERSION" >> "$GITHUB_OUTPUT"
+          echo "mac_version=$MAC_VER" >> "$GITHUB_OUTPUT"
+          echo "win_version=$WIN_VER" >> "$GITHUB_OUTPUT"
+
           if [ -z "$VERSION" ]; then echo "No version detected"; exit 0; fi
 
-          # Update package.json version
           node -e "
             const fs=require('fs'), p=JSON.parse(fs.readFileSync('package.json','utf8'));
             p.version='$VERSION';
@@ -254,9 +255,15 @@ jobs:
         run: ls -lhR artifacts/
 
       - name: Create Release
+        if: steps.version.outputs.version != ''
         uses: softprops/action-gh-release@v2
         with:
           tag_name: v${{ steps.version.outputs.version }}
+          name: Codex ${{ steps.version.outputs.version }}
+          body: |
+            ## Upstream Versions
+            - **macOS / Linux**: `${{ steps.version.outputs.mac_version || 'N/A' }}`
+            - **Windows**: `${{ steps.version.outputs.win_version || 'N/A' }}`
           files: |
             artifacts/**/*.dmg
             artifacts/**/*.zip
@@ -264,6 +271,5 @@ jobs:
             artifacts/**/*.rpm
             artifacts/**/*.exe
           draft: true
-          generate_release_notes: true
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

@@ -200,7 +200,7 @@ async function syncMac(macInfo) {
     fs.rmSync(asarExtractDir, { recursive: true });
   }
   console.log("  📦 提取 ASAR...");
-  execFileSync("npx", ["asar", "extract", appDir, asarExtractDir]);
+  execSync(`npx asar extract "${appDir}" "${asarExtractDir}"`);
 
   // 落盘到 src/upstream/unix/
   console.log(`  💾 同步到 ${path.relative(PROJECT_ROOT, SRC_UNIX)}/`);
@@ -271,7 +271,7 @@ async function syncWin(winInfo) {
     fs.rmSync(asarExtractDir, { recursive: true });
   }
   console.log("  📦 提取 ASAR...");
-  execFileSync("npx", ["asar", "extract", asarPath, asarExtractDir]);
+  execSync(`npx asar extract "${asarPath}" "${asarExtractDir}"`);
 
   // 落盘到 src/upstream/win/
   console.log(`  💾 同步到 ${path.relative(PROJECT_ROOT, SRC_WIN)}/`);
